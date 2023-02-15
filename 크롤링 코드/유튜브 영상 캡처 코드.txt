@@ -1,0 +1,72 @@
+## 유튜브 영상 특정 시간대 캡처
+
+# 설치하고 시작
+#!pip install pafy
+#!pip install opencv-python
+
+import pafy
+import cv2
+
+url = "https://www.youtube.com/watch?v=pTBRlh4sZu0"
+video = pafy.new(url)
+best = video.getbest(preftype="mp4")
+capture = cv2.VideoCapture()
+capture.open(best.url)
+
+
+# ------------------------------------------------------------
+# https://jangjy.tistory.com/337
+# 파일 경로 지정할 때 한글 들어가면 안 되길래 찾아본 코드
+# 경로에 한글이 안 들어가면 그냥 cv2.imwrite() 써서 이미지 저장하면 됨
+import numpy as np
+import cv2
+import os
+def imwrite(filename, img, params=None):
+    try:
+        ext = os.path.splitext(filename)[1]
+        result, n = cv2.imencode(ext, img, params)
+
+        if result:
+            with open(filename, mode='w+b') as f:
+                n.tofile(f)
+            return True
+        else:
+            return False
+    except Exception as e:
+        print(e)
+        return False
+# ------------------------------------------------------------
+
+
+# 초당 프레임 수를 get 클래스로 계산해 변수에 담음
+fps = capture.get(cv2.CAP_PROP_FPS) 
+
+# 영상의 총 프레임 수를 get 클래스로 계산해 변수에 담음
+frame_count = capture.get(cv2.CAP_PROP_FRAME_COUNT)
+
+# 영상이 몇 초인지도 아래 나눗셈으로 계산이 가능. 변수에 담음
+duration = frame_count / fps
+
+print("영상은 총 몇 초짜리인가? :", duration)
+
+# 0초부터 시작해서 캡쳐를 시작
+second = 0
+capture.set(cv2.CAP_PROP_POS_MSEC, second * 1000) # openCV가 마이크로 세컨드 (ms)를 쓰기 때문에 1초는 1000을 입력해야함
+success, image = capture.read()
+
+num = 0  # 캡쳐 횟수 카운터
+increase_width = 15  # 몇 초마다 한번씩 캡쳐를 하고 싶은지 지정
+
+while success and second <= duration:
+
+    num += 1
+    second += increase_width  # 증가폭
+    print("이번 캡쳐할 시간대는", second, "초")
+    capture.set(cv2.CAP_PROP_POS_MSEC, second * 1000)
+    success, image = capture.read()
+    
+    #_min = second//60
+    #_sec = second - (second//60)*60
+    imwrite("E:/YT/강철부대/종합분석/캡처/1회/new/리마2_1회_%d.jpg" % second, image) # 저장 경로 설정
+    
+print("캡처 완료!!")
